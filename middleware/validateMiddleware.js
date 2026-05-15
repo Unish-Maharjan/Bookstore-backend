@@ -18,6 +18,7 @@ const bookSchema = Joi.object({
   description: Joi.string().trim().required(),
   category: Joi.string().trim().required(),
   stock: Joi.number().min(0).required(),
+  rating: Joi.number().min(0).max(5).required(),
   image: Joi.string().allow(null, "")
 });
 

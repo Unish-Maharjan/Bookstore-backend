@@ -27,6 +27,7 @@ const getBooks = async (req, res) => {
   }
 };
 
+
 // GET /books/:id
 const getSingleBook = async (req, res) => {
   try {
@@ -50,7 +51,7 @@ const updateBook = async (req, res) => {
   try {
     const updateData = { ...req.body };
 
-    // Update image if a new one was uploaded
+    // update image if a new one was uploaded
     if (req.file) {
       updateData.image = req.file.path;
     }

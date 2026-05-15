@@ -33,10 +33,17 @@ const bookSchema = new mongoose.Schema(
       min: [0, "Stock cannot be negative"],
       default: 0,
     },
+    rating:{
+      type: Number,
+      min: [0, "rating cannot be negative"],
+      max: [5, "rating cannot be above 5"],
+      require: true
+    },
     image: {
       type: String, // stores the file path/URL
       default: null,
     },
+
   },
   { timestamps: true }
 );
