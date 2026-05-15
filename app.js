@@ -15,6 +15,8 @@ const connectDatabase = require("./database");
 
 const app = express();
 
+console.log("DB URI:", process.env.DATABASE_URI);
+
 // Connect DB
 connectDatabase();
 
