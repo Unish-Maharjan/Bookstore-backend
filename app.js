@@ -15,7 +15,6 @@ const connectDatabase = require("./database");
 
 const app = express();
 
-console.log("DB URI:", process.env.DATABASE_URI);
 
 // Connect DB
 connectDatabase();
@@ -35,6 +34,10 @@ app.use("/auth", authRoutes);
 // Health check
 app.get("/", (req, res) => {
   res.json({ message: "Bookstore API running" });
+});
+
+app.get("/test", (req, res) => {
+  res.json({ message: "API working fine" });
 });
 
 // 404 handler
