@@ -1,25 +1,9 @@
+// routes/authRoutes.js
 const express = require("express");
 const router = express.Router();
-const jwt = require("jsonwebtoken");
+const { register, login } = require("../controllers/authController");
 
-// TEST LOGIN ROUTE
-router.post("/login", (req, res) => {
-
-  const token = jwt.sign(
-    {
-      id: "123",
-      role: "admin",
-    },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "7d",
-    }
-  );
-
-  res.json({
-    message: "Login successful",
-    token,
-  });
-});
+router.post("/register", register);
+router.post("/login", login);
 
 module.exports = router;

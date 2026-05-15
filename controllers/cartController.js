@@ -1,12 +1,12 @@
 const Cart = require("../models/cartModel");
 const Book = require("../models/bookModel");
 
-// POST /cart — Add item to cart (creates cart if it doesn't exist)
+// POST /cart — add item to cart (creates cart if it doesn't exist)
 const addToCart = async (req, res) => {
   try {
     const { userId, bookId, quantity } = req.body;
 
-    // Verify the book exists and has enough stock
+    // verify the book exists and has enough stock
     const book = await Book.findById(bookId);
     if (!book) {
       return res.status(404).json({ message: "Book not found" });

@@ -1,6 +1,6 @@
 const Joi = require("joi");
 
-// Wraps a Joi schema into Express middleware
+// wraps a Joi schema into express middleware
 const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });
   if (error) {
@@ -10,7 +10,7 @@ const validate = (schema) => (req, res, next) => {
   next();
 };
 
-// Book validation — image is optional (handled by multer separately)
+// book validation — image is optional (handled by multer separately)
 const bookSchema = Joi.object({
   title: Joi.string().trim().required(),
   author: Joi.string().trim().required(),
