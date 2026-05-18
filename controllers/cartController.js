@@ -1,111 +1,159 @@
 const Cart = require("../models/cartModel");
 const Book = require("../models/bookModel");
 
-// POST /cart — add item to cart (creates cart if it doesn't exist)
+// POST /cart — Add item to cart (or increment if exists)
 const addToCart = async (req, res) => {
-  try {
-    const { userId, bookId, quantity } = req.body;
+  const { userId, bookId, quantity } = req.body;
 
-    // verify the book exists and has enough stock
+  try {
     const book = await Book.findById(bookId);
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
     }
+
     if (book.stock < quantity) {
-      return res.status(400).json({ message: `Only ${book.stock} copies in stock` });
+      return res
+        .status(400)
+        .json({ message: `Only ${book.stock} copies available in stock` });
     }
 
-    // Check if book is already in user's cart
-    const existingCart = await Cart.findOne({ userId, "items.bookId": bookId });
+    let cart = await Cart.findOne({ userId });
 
-    if (existingCart) {
-      // Increment quantity of existing item
-      const cart = await Cart.findOneAndUpdate(
-        { userId, "items.bookId": bookId },
-        { $inc: { "items.$.quantity": quantity } },
-        { new: true }
-      ).populate("items.bookId");
+    if (!cart) {
+      // Create a new cart for this user
+      cart = new Cart({
+        userId,
+        items: [
+          {
+            bookId: book._id,
+            title: book.title,
+            quantity,
+          },
+        ],
+      });
+    } else {
+      const existingItem = cart.items.find(
+        (item) => item.bookId.toString() === bookId
+      );
 
-      return res.json(cart);
+      if (existingItem) {
+        // Check stock before incrementing
+        const newQuantity = existingItem.quantity + quantity;
+        if (newQuantity > book.stock) {
+          return res.status(400).json({
+            message: `Cannot add ${quantity} more. Only ${book.stock - existingItem.quantity} left in stock`,
+          });
+        }
+        existingItem.quantity = newQuantity;
+      } else {
+        // Add new item to cart
+        cart.items.push({
+          bookId: book._id,
+          title: book.title,
+          quantity,
+        });
+      }
     }
 
-    // Add new item to cart (upsert creates cart if it doesn't exist)
-    const cart = await Cart.findOneAndUpdate(
-      { userId },
-      { $push: { items: { bookId, title: book.title, quantity } } },
-      { new: true, upsert: true }
-    ).populate("items.bookId");
-
-    res.status(201).json(cart);
+    await cart.save();
+    res.status(200).json({ message: "Item added to cart", cart });
   } catch (error) {
-    if (error.name === "CastError") {
-      return res.status(400).json({ message: "Invalid ID format" });
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// PATCH /cart/:userId/item/:bookId — Decrement item quantity by 1
+const decrementItem = async (req, res) => {
+  const { userId, bookId } = req.params;
+
+  try {
+    const cart = await Cart.findOne({ userId });
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+    const item = cart.items.find((i) => i.bookId.toString() === bookId);
+    if (!item) return res.status(404).json({ message: "Item not found in cart" });
+
+    if (item.quantity === 1) {
+      cart.items = cart.items.filter((i) => i.bookId.toString() !== bookId);
+    } else {
+      item.quantity -= 1;
     }
-    res.status(500).json({ message: error.message });
+
+    await cart.save();
+    res.status(200).json({ message: "Item decremented", cart });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 // GET /cart/:userId — Get a user's cart
 const getCart = async (req, res) => {
-  try {
-    const { userId } = req.params;
+  const { userId } = req.params;
 
-    const cart = await Cart.findOne({ userId }).populate("items.bookId");
+  try {
+    const cart = await Cart.findOne({ userId }).populate(
+      "items.bookId",
+      "title author price image"
+    );
 
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
     }
 
-    res.json(cart);
+    res.status(200).json(cart);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// DELETE /cart/:userId/item/:bookId — Remove a specific item
+// DELETE /cart/:userId/item/:bookId — Remove a specific item from cart
 const removeFromCart = async (req, res) => {
-  try {
-    const { userId, bookId } = req.params;
+  const { userId, bookId } = req.params;
 
-    const cart = await Cart.findOneAndUpdate(
-      { userId },
-      { $pull: { items: { bookId } } },
-      { new: true }
-    ).populate("items.bookId");
+  try {
+    const cart = await Cart.findOne({ userId });
 
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
     }
 
-    res.json(cart);
-  } catch (error) {
-    if (error.name === "CastError") {
-      return res.status(400).json({ message: "Invalid ID format" });
+    const itemExists = cart.items.find(
+      (item) => item.bookId.toString() === bookId
+    );
+
+    if (!itemExists) {
+      return res.status(404).json({ message: "Item not found in cart" });
     }
-    res.status(500).json({ message: error.message });
+
+    cart.items = cart.items.filter(
+      (item) => item.bookId.toString() !== bookId
+    );
+
+    await cart.save();
+    res.status(200).json({ message: "Item removed from cart", cart });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// DELETE /cart/:userId — Clear a user's cart
+// DELETE /cart/:userId — Clear the entire cart
 const clearCart = async (req, res) => {
-  try {
-    const { userId } = req.params;
+  const { userId } = req.params;
 
-    const cart = await Cart.findOneAndDelete({ userId });
+  try {
+    const cart = await Cart.findOne({ userId });
 
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
     }
 
-    res.json({ message: "Cart cleared successfully" });
+    cart.items = [];
+    await cart.save();
+
+    res.status(200).json({ message: "Cart cleared", cart });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-module.exports = {
-  addToCart,
-  getCart,
-  removeFromCart,
-  clearCart,
-};
+module.exports = { addToCart, getCart, removeFromCart, clearCart, decrementItem };
