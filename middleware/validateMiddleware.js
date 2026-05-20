@@ -10,7 +10,6 @@ const validate = (schema) => (req, res, next) => {
   next();
 };
 
-// book validation — image is optional (handled by multer separately)
 const bookSchema = Joi.object({
   title: Joi.string().trim().required(),
   author: Joi.string().trim().required(),
@@ -22,7 +21,7 @@ const bookSchema = Joi.object({
   image: Joi.string().allow(null, "")
 });
 
-// Cart validation
+
 const cartSchema = Joi.object({
   userId: Joi.string().required(),
   bookId: Joi.string().required(),

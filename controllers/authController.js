@@ -1,4 +1,3 @@
-// controllers/authController.js
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 
@@ -10,7 +9,7 @@ const generateToken = (user) => {
   );
 };
 
-// POST /auth/register
+
 const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -39,7 +38,7 @@ const register = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-// POST /auth/login
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;

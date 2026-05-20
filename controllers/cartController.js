@@ -1,26 +1,30 @@
 const Cart = require("../models/cartModel");
 const Book = require("../models/bookModel");
 
-// POST /cart — Add item to cart (or increment if exists)
+
 const addToCart = async (req, res) => {
   const { userId, bookId, quantity } = req.body;
 
   try {
     const book = await Book.findById(bookId);
     if (!book) {
-      return res.status(404).json({ message: "Book not found" });
+      return res.status(404).json({
+         message: "Book not found"
+         });
     }
 
     if (book.stock < quantity) {
       return res
         .status(400)
-        .json({ message: `Only ${book.stock} copies available in stock` });
+        .json({ 
+          message: `Only ${book.stock} copies available in stock`
+         });
     }
+
 
     let cart = await Cart.findOne({ userId });
 
     if (!cart) {
-      // Create a new cart for this user
       cart = new Cart({
         userId,
         items: [
@@ -32,21 +36,20 @@ const addToCart = async (req, res) => {
         ],
       });
     } else {
+
       const existingItem = cart.items.find(
         (item) => item.bookId.toString() === bookId
       );
 
       if (existingItem) {
-        // Check stock before incrementing
         const newQuantity = existingItem.quantity + quantity;
         if (newQuantity > book.stock) {
           return res.status(400).json({
-            message: `Cannot add ${quantity} more. Only ${book.stock - existingItem.quantity} left in stock`,
+            message: `Cannot add ${quantity} more.`,
           });
         }
         existingItem.quantity = newQuantity;
       } else {
-        // Add new item to cart
         cart.items.push({
           bookId: book._id,
           title: book.title,
@@ -56,13 +59,17 @@ const addToCart = async (req, res) => {
     }
 
     await cart.save();
-    res.status(200).json({ message: "Item added to cart", cart });
+    res.status(200).json({ 
+      message: "Item added to cart", cart
+     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ 
+      message: "Server error", error: error.message
+     });
   }
 };
 
-// PATCH /cart/:userId/item/:bookId — Decrement item quantity by 1
+
 const decrementItem = async (req, res) => {
   const { userId, bookId } = req.params;
 
@@ -86,7 +93,6 @@ const decrementItem = async (req, res) => {
   }
 };
 
-// GET /cart/:userId — Get a user's cart
 const getCart = async (req, res) => {
   const { userId } = req.params;
 
@@ -106,7 +112,7 @@ const getCart = async (req, res) => {
   }
 };
 
-// DELETE /cart/:userId/item/:bookId — Remove a specific item from cart
+
 const removeFromCart = async (req, res) => {
   const { userId, bookId } = req.params;
 
@@ -114,7 +120,9 @@ const removeFromCart = async (req, res) => {
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
+      return res.status(404).json({
+         message: "Cart not found" 
+        });
     }
 
     const itemExists = cart.items.find(
@@ -122,7 +130,9 @@ const removeFromCart = async (req, res) => {
     );
 
     if (!itemExists) {
-      return res.status(404).json({ message: "Item not found in cart" });
+      return res.status(404).json({ 
+        message: "Item not found in cart"
+       });
     }
 
     cart.items = cart.items.filter(
@@ -130,13 +140,16 @@ const removeFromCart = async (req, res) => {
     );
 
     await cart.save();
-    res.status(200).json({ message: "Item removed from cart", cart });
+    res.status(200).json({
+       message: "Item removed from cart", cart
+       });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ 
+      message: "Server error", error: error.message 
+    });
   }
 };
 
-// DELETE /cart/:userId — Clear the entire cart
 const clearCart = async (req, res) => {
   const { userId } = req.params;
 
@@ -144,15 +157,21 @@ const clearCart = async (req, res) => {
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
+      return res.status(404).json({
+         message: "Cart not found"
+         });
     }
 
     cart.items = [];
     await cart.save();
 
-    res.status(200).json({ message: "Cart cleared", cart });
+    res.status(200).json({
+       message: "Cart cleared", cart
+       });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ 
+      message: "Server error", error: error.message
+     });
   }
 };
 

@@ -13,11 +13,11 @@ const { authenticate, adminOnly } = require("../middleware/authMiddleware");
 const { validateBook } = require("../middleware/validateMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
-// Public routes
+
 router.get("/", getBooks);
 router.get("/:id", getSingleBook);
 
-// Admin-only routes (authenticate first, then check role)
+
 router.post(
   "/",
   authenticate,
