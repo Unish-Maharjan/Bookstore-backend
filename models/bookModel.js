@@ -40,7 +40,7 @@ const bookSchema = new mongoose.Schema(
       require: true
     },
     image: {
-      type: String, // stores the file path/URL
+      type: String, 
       default: null,
     },
 

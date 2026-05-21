@@ -5,7 +5,6 @@ const createBook = async (req, res) => {
   try {
     const bookData = { ...req.body };
 
-    // Attach uploaded image path if provided
     if (req.file) {
       bookData.image = req.file.path;
     }
