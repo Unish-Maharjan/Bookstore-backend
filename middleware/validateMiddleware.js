@@ -10,6 +10,7 @@ const validate = (schema) => (req, res, next) => {
   next();
 };
 
+
 const bookSchema = Joi.object({
   title: Joi.string().trim().required(),
   author: Joi.string().trim().required(),
@@ -19,6 +20,7 @@ const bookSchema = Joi.object({
   stock: Joi.number().min(0).required(),
   rating: Joi.number().min(0).max(5).required(),
   image: Joi.string().allow(null, "")
+  
 });
 
 
