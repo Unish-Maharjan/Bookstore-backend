@@ -16,11 +16,15 @@ const paymentResponse = (payment) => ({
 const initiatePayment = async (req, res) => {
   try {
     const { orderId } = req.body;
+    if (!mongoose.isValidObjectId(orderId)) {
+      return res.status(400).json({ message: "Invalid order ID" });
+    }
+
     const order = await Order.findOne({ _id: orderId, userId: req.user._id });
 
     if (!order) return res.status(404).json({ message: "Order not found" });
-    if (order.status === "CANCELLED") {
-      return res.status(409).json({ message: "Cancelled orders cannot be paid" });
+    if (order.status !== "PENDING_PAYMENT") {
+      return res.status(409).json({ message: "Order is not awaiting payment" });
     }
     if (order.paymentStatus === "PAID") {
       return res.status(409).json({ message: "Order has already been paid" });
@@ -67,6 +71,21 @@ const verifyPayment = async (req, res) => {
     }
 
     if (payment.status === "COMPLETED") {
+      const order = await Order.findOne({
+        _id: payment.orderId,
+        userId: req.user._id,
+        status: "PAID",
+        paymentStatus: "PAID",
+      });
+
+      if (!order) {
+        return res.status(409).json({
+          success: false,
+          message: "Payment and order status are inconsistent",
+          data: null,
+        });
+      }
+
       return res.json({ success: true, message: "Payment completed successfully", data: paymentResponse(payment) });
     }
 
