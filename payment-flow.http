@@ -1,0 +1,44 @@
+@baseUrl = http://localhost:3000
+@token = paste_login_token_here
+@orderId = paste_order_id_here
+@transactionId = paste_transaction_id_here
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer@example.com",
+  "password": "password123"
+}
+
+### Create an order from the authenticated user's cart
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Initiate sandbox payment
+POST {{baseUrl}}/api/payments/initiate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "orderId": "{{orderId}}",
+  "paymentMethod": "TEST"
+}
+
+### Verify sandbox payment
+POST {{baseUrl}}/api/payments/verify
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "transactionId": "{{transactionId}}",
+  "success": true
+}
+
+### Retrieve payment
+GET {{baseUrl}}/api/payments/paste_payment_id_here
+Authorization: Bearer {{token}}

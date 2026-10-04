@@ -30,7 +30,22 @@ const cartSchema = Joi.object({
   quantity: Joi.number().min(1).required(),
 });
 
+const orderSchema = Joi.object({});
+
+const initiatePaymentSchema = Joi.object({
+  orderId: Joi.string().hex().length(24).required(),
+  paymentMethod: Joi.string().valid("TEST", "Test Electronic Payment").default("TEST"),
+});
+
+const verifyPaymentSchema = Joi.object({
+  transactionId: Joi.string().pattern(/^TEST-TXN-[A-F0-9]{16}$/).required(),
+  success: Joi.boolean().valid(true, false).default(true),
+});
+
 module.exports = {
   validateBook: validate(bookSchema),
   validateCart: validate(cartSchema),
+  validateOrder: validate(orderSchema),
+  validateInitiatePayment: validate(initiatePaymentSchema),
+  validateVerifyPayment: validate(verifyPaymentSchema),
 };
