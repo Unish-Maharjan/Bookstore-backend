@@ -99,4 +99,14 @@ Authorization: Bearer <token>
 
 The payment is `COMPLETED`; the order is `PAID` with `paymentStatus: "PAID"`.
 
+Authenticated order history is available at:
+
+```http
+GET http://localhost:3000/api/orders
+Authorization: Bearer <token>
+```
+
+It returns the current user's orders, newest first. This endpoint is read-only and
+does not change the existing order or payment workflow.
+
 The same requests are ready to paste into Postman or use from `payment-flow.http` with the VS Code REST Client extension. A failed verification (`success: false`) returns `400`, marks the payment `FAILED`, and does not mark the order paid. A second initiation for the same order is rejected with `409`.
