@@ -120,18 +120,32 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-const getPayment = async (req, res) => {
+const getPayments = async (req, res) => {
   try {
-    if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid payment ID" });
-    }
+    const filter = req.user && req.user.role === "admin" ? {} : { userId: req.user._id };
+    const payments = await Payment.find(filter)
+      .populate("userId", "name email role")
+      .populate("orderId", "totalAmount items status paymentStatus createdAt")
+      .sort({ createdAt: -1 });
 
-    const payment = await Payment.findOne({ _id: req.params.id, userId: req.user._id });
-    if (!payment) return res.status(404).json({ message: "Payment not found" });
-    return res.json({ success: true, data: paymentResponse(payment) });
+    return res.json({
+      success: true,
+      data: payments.map((p) => ({
+        paymentId: p._id,
+        transactionId: p.transactionId,
+        orderId: p.orderId?._id || p.orderId,
+        orderDetails: p.orderId,
+        user: p.userId,
+        amount: p.amount,
+        currency: p.currency,
+        paymentMethod: p.paymentMethod,
+        status: p.status,
+        createdAt: p.createdAt,
+      })),
+    });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-module.exports = { initiatePayment, verifyPayment, getPayment };
+module.exports = { initiatePayment, verifyPayment, getPayment, getPayments };

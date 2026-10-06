@@ -61,11 +61,34 @@ const getOrder = async (req, res) => {
 
 const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const filter = req.user && req.user.role === "admin" ? {} : { userId: req.user._id };
+    const orders = await Order.find(filter)
+      .populate("userId", "name email role")
+      .sort({ createdAt: -1 });
     return res.json(orders);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { createOrder, getOrder, getOrders };
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { status, paymentStatus } = req.body;
+    const update = {};
+    if (status) update.status = status;
+    if (paymentStatus) update.paymentStatus = paymentStatus;
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      update,
+      { new: true }
+    ).populate("userId", "name email role");
+
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    return res.json(order);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createOrder, getOrder, getOrders, updateOrderStatus };
