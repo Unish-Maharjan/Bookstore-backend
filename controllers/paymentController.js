@@ -141,6 +141,25 @@ const verifyPayment = async (req, res) => {
   }
 };
 
+const getPayment = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid payment ID" });
+    }
+
+    const filter =
+      req.user && req.user.role === "admin"
+        ? { _id: req.params.id }
+        : { _id: req.params.id, userId: req.user._id };
+
+    const payment = await Payment.findOne(filter);
+    if (!payment) return res.status(404).json({ message: "Payment not found" });
+    return res.json({ success: true, data: paymentResponse(payment) });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 const getPayments = async (req, res) => {
   try {
     const filter = req.user && req.user.role === "admin" ? {} : { userId: req.user._id };
