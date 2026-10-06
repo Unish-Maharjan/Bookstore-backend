@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const mongoose = require("mongoose");
 const Order = require("../models/orderModel");
 const Payment = require("../models/paymentModel");
+const Cart = require("../models/cartModel");
 
 const paymentResponse = (payment) => ({
   paymentId: payment._id,
@@ -33,12 +34,26 @@ const initiatePayment = async (req, res) => {
       return res.status(400).json({ message: "Order amount is invalid" });
     }
 
-    const existingPayment = await Payment.findOne({ orderId: order._id });
-    if (existingPayment) {
-      return res.status(409).json({ message: "A payment already exists for this order" });
+    let payment = await Payment.findOne({ orderId: order._id });
+    if (payment) {
+      if (payment.status === "COMPLETED") {
+        return res.status(409).json({ message: "Order has already been paid" });
+      }
+      payment.status = "PENDING";
+      payment.transactionId = `TEST-TXN-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
+      payment.amount = order.totalAmount;
+      payment.currency = order.currency;
+      payment.paymentMethod = "TEST";
+      await payment.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Sandbox payment initiated",
+        data: paymentResponse(payment),
+      });
     }
 
-    const payment = await Payment.create({
+    payment = await Payment.create({
       orderId: order._id,
       userId: req.user._id,
       amount: order.totalAmount,
@@ -89,7 +104,10 @@ const verifyPayment = async (req, res) => {
       return res.json({ success: true, message: "Payment completed successfully", data: paymentResponse(payment) });
     }
 
-    if (payment.status !== "PENDING" || process.env.PAYMENT_MODE !== "test" || success !== true) {
+    // Default to test mode if PAYMENT_MODE is not explicitly set
+    const isTestMode = !process.env.PAYMENT_MODE || process.env.PAYMENT_MODE.toLowerCase() === "test";
+
+    if (payment.status !== "PENDING" || !isTestMode || success !== true) {
       await Payment.findByIdAndUpdate(payment._id, { status: "FAILED" });
       return res.status(400).json({ success: false, message: "Payment verification failed", data: null });
     }
@@ -100,10 +118,13 @@ const verifyPayment = async (req, res) => {
       { new: true }
     );
     const updatedOrder = await Order.findOneAndUpdate(
-      { _id: payment.orderId, userId: req.user._id, status: "PENDING_PAYMENT", paymentStatus: "PENDING" },
+      { _id: payment.orderId, userId: req.user._id },
       { status: "PAID", paymentStatus: "PAID" },
       { new: true }
     );
+
+    // Clear user cart upon successful purchase
+    await Cart.findOneAndUpdate({ userId: req.user._id }, { items: [] });
 
     if (!completedPayment || !updatedOrder) {
       await Payment.findOneAndUpdate({ _id: payment._id, status: "COMPLETED" }, { status: "PENDING" });
