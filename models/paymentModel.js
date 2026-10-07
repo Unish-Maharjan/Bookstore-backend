@@ -16,12 +16,17 @@ const paymentSchema = new mongoose.Schema(
     },
     amount: { type: Number, required: true, min: 0.01 },
     currency: { type: String, enum: ["NPR"], default: "NPR" },
-    paymentMethod: { type: String, enum: ["TEST"], required: true },
+    paymentMethod: { type: String, enum: ["TEST", "ESEWA", "COD"], required: true },
     transactionId: { type: String, required: true, unique: true, index: true },
     status: {
       type: String,
       enum: ["PENDING", "COMPLETED", "FAILED", "CANCELLED"],
       default: "PENDING",
+    },
+    esewaDetails: {
+      transactionCode: { type: String },
+      productCode: { type: String },
+      verifiedAt: { type: Date },
     },
   },
   { timestamps: true }

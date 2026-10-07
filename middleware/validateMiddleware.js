@@ -34,13 +34,14 @@ const orderSchema = Joi.object({});
 
 const initiatePaymentSchema = Joi.object({
   orderId: Joi.string().hex().length(24).required(),
-  paymentMethod: Joi.string().valid("TEST", "Test Electronic Payment").default("TEST"),
+  paymentMethod: Joi.string().valid("TEST", "ESEWA", "COD", "Test Electronic Payment").default("TEST"),
 });
 
 const verifyPaymentSchema = Joi.object({
-  transactionId: Joi.string().pattern(/^TEST-TXN-[A-F0-9]{16}$/).required(),
+  transactionId: Joi.string().allow(null, "").default(""),
+  encodedData: Joi.string().allow(null, ""),
   success: Joi.boolean().valid(true, false).default(true),
-});
+}).or("transactionId", "encodedData");
 
 module.exports = {
   validateBook: validate(bookSchema),
